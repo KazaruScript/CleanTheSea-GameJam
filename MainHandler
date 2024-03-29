@@ -1,0 +1,68 @@
+local GameEvent = game.ReplicatedStorage.GameStart
+local ResultEvent = game.ReplicatedStorage.Result
+local Net = game.ServerStorage:WaitForChild("Net")
+local Blur = game.Lighting.Blur
+local Song = game.Workspace.FunSong
+local Yay = game.Workspace.YaySound
+local Lose = game.Workspace.LoseSound
+local StartWall = game.Workspace:WaitForChild("StartWall")
+local completed = false
+
+GameEvent.OnServerEvent:Connect(function(plr,jumpPower,walkSpeed)
+	task.wait()
+	local Timer = plr.PlayerGui:FindFirstChild("MainGui").TimerFrame.Timer
+	local MainGui = Timer.Parent.Parent
+	local StartText = MainGui.StartText
+	local ResultFrame = MainGui.ResultBackground.ResultFrame
+	local GameStarted = plr:FindFirstChild("GameStarted")
+	local Score = plr:FindFirstChild("score")
+	local Character = plr.Character or plr.CharacterAdded:Wait()
+	
+	if Timer == nil then return end
+	
+	Blur.Enabled = true
+	MainGui.Enabled = true
+	StartText.Visible = true
+	
+	for start = 5,0,-1 do
+		StartText.Text = start
+		wait(1)
+	end
+	
+	StartText.Text = "GO!"
+	wait(1)
+	StartWall:Destroy()
+	Song:Play()
+	task.wait()
+	print("Walkspeed="..walkSpeed)
+	Character.Humanoid.WalkSpeed = walkSpeed + 10
+	Character.Humanoid.JumpPower = jumpPower - 1
+	Blur.Enabled = false	
+	StartText.Visible = false
+	
+	Character.Humanoid.UseJumpPower = true
+	Character.Humanoid.JumpPower = jumpPower	
+	GameStarted.Value = true
+	local NewNet = Net:Clone()
+	NewNet.Parent = plr.Backpack
+	MainGui.TimerFrame.Visible = true
+	MainGui.ScoreFrame.Visible = true
+	
+	for number = 50,0,-1 do
+		Timer.Text = number
+		wait(1)
+		if Score.Value >= 50 and completed == false then
+			completed = true
+			Song:Pause()
+			Yay:Play()
+			ResultEvent:FireClient(plr,Score,ResultFrame,Character,Blur)
+		end
+	end
+	
+	task.wait()
+	Song:Pause()
+	Lose:Play()
+	ResultEvent:FireClient(plr,Score,ResultFrame,Character,Blur)
+	
+	
+end)
