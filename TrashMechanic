@@ -1,0 +1,85 @@
+local Trashes = game.Workspace:WaitForChild("Trashes")
+local debounce = true
+
+
+game.Players.PlayerAdded:Connect(function(plr)
+	local score = Instance.new("IntValue")
+	score.Name = "score"
+	score.Parent = plr
+	score.Value = 0
+	
+	local GameStarted = Instance.new("BoolValue")
+	GameStarted.Name = "GameStarted"
+	GameStarted.Parent = plr
+	GameStarted.Value = false
+	
+	
+end)
+
+local function CollectTrashes(trash,hit,health)
+	local player = game.Players:FindFirstChild(hit.Parent.Name)
+	if player then
+		local tool = player.Character:FindFirstChild("Net")
+		local TrashPoint = trash:FindFirstChild("TrashPoint").Value	
+		local IsPlaying = player:FindFirstChild("GameStarted").Value
+		local PlayerScore = player:FindFirstChild("score")
+		
+		if tool and TrashPoint and IsPlaying == true and PlayerScore then
+			if debounce and health > 1 and tool.Clicked.Value == true then
+				debounce = false
+				print("done")
+				trash:SetAttribute("Health",health - 1)
+
+				wait(.5)
+				debounce = true
+				
+			elseif debounce and health <= 1 and tool.Clicked.Value == true then -- ketika memukul sampah dan sampahnya tinggal tersisa 1 health maka setelah memukul akan ke-destroy
+				debounce = false
+				PlayerScore.Value += TrashPoint
+				trash:SetAttribute("Health",health - 1)
+				
+				if PlayerScore.Value > 50 then
+					PlayerScore.Value = 50
+					wait(.5)
+					trash:Destroy()
+					debounce = true
+				end
+				
+				wait(.5) -- nunggu durasi tween selesai (durasi tween 0.5 detik)
+				trash:Destroy()
+				debounce = true
+				
+			end
+		end
+	end
+end
+
+
+for i, trash in pairs(Trashes:GetChildren()) do
+	if trash:IsA("Model") and trash:FindFirstChild("HitPart") then
+		local Maxhealth = trash:GetAttribute("Health")
+		local mainFrame = trash:WaitForChild("BillboardGui").MainHealthFrame
+		local HealthBar = mainFrame:WaitForChild("HealthBar")
+		local HealthText = mainFrame:WaitForChild("HealthText")
+		
+		HealthText.Text = Maxhealth.. "/" ..Maxhealth
+		trash.HitPart.Touched:Connect(function(hit)
+			local health = trash:GetAttribute("Health")
+			CollectTrashes(trash,hit,health)
+		end)
+		
+		
+		trash:GetAttributeChangedSignal("Health"):Connect(function()
+			local CurrentHealth = trash:GetAttribute("Health")
+			
+			HealthBar:TweenSize(UDim2.new(CurrentHealth/Maxhealth,0,HealthBar.Size.Y.Scale,0), Enum.EasingDirection.Out, Enum.EasingStyle.Sine, .5)
+			HealthText.Text = CurrentHealth.."/"..Maxhealth
+			--HealthText.Text = math.floor(CurrentHealth/Maxhealth * 100) .. "%" -- style ke-2
+
+		end)
+		
+		
+		
+	end
+end
+		
